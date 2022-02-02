@@ -1,5 +1,5 @@
 import React from "react";
-import { Route, Routes } from "react-router-dom";
+import { Link, Route, Routes } from "react-router-dom";
 
 import CategoryScreen from "../screens/CategoryScreen";
 import { CATEGORY_ROUTES } from "../constants/general";
@@ -26,6 +26,10 @@ const AppRouter = () => (
       element={
         <main className="page">
           <h1 className="page__title">Page not found</h1>
+          <p className="page__lead">
+            There is no photo category at this address.{" "}
+            <Link to="/">Back to the gallery</Link>
+          </p>
         </main>
       }
     />

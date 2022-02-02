@@ -8,6 +8,20 @@ export const downloadFileName = (name, url) => {
   return hasExtension ? `${name}.${extension}` : name;
 };
 
+/**
+ * Readable alt text from the API's file-style names, which are all the API
+ * says about a photo: "nature_12" becomes "Nature photo 12".
+ */
+export const describePhoto = (name) => {
+  const match = /^([a-z]+)_(\d+)$/i.exec(name);
+
+  if (!match) return name;
+
+  const [, category, number] = match;
+
+  return `${category[0].toUpperCase()}${category.slice(1)} photo ${number}`;
+};
+
 const ImageCard = ({ name, url }) => {
   const [downloading, setDownloading] = useState(false);
 
@@ -53,7 +67,7 @@ const ImageCard = ({ name, url }) => {
       <img
         className="card__image"
         src={url}
-        alt={name}
+        alt={describePhoto(name)}
         loading="lazy"
         decoding="async"
         width="400"
@@ -69,6 +83,9 @@ const ImageCard = ({ name, url }) => {
           disabled={downloading}
         >
           {downloading ? "Downloading..." : "Download"}
+          {/* Nine identical "Download" buttons are indistinguishable to a
+              screen reader; the hidden suffix says which photo each one is. */}
+          <span className="visually-hidden"> {name}</span>
         </button>
       </figcaption>
     </figure>

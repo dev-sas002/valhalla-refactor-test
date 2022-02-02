@@ -32,9 +32,9 @@ const renderAt = (path, source) => {
 
 describe("routing", () => {
   test.each([
-    ["/", "Nature", "nature_1"],
-    ["/architecture", "Architecture", "architecture_1"],
-    ["/fashion", "Fashion", "fashion_1"],
+    ["/", "Nature", "Nature photo 1"],
+    ["/architecture", "Architecture", "Architecture photo 1"],
+    ["/fashion", "Fashion", "Fashion photo 1"],
   ])("%s shows the %s category", async (path, label, firstImage) => {
     renderAt(path);
 
@@ -44,12 +44,15 @@ describe("routing", () => {
     expect(await screen.findByAltText(firstImage)).toBeInTheDocument();
   });
 
-  test("renders a not-found screen for an unknown path", () => {
+  test("renders a not-found screen with a way back for an unknown path", () => {
     renderAt("/does-not-exist");
 
     expect(
       screen.getByRole("heading", { level: 1, name: "Page not found" })
     ).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: "Back to the gallery" })
+    ).toHaveAttribute("href", "/");
   });
 
   test("switching category aborts the requests still in flight", async () => {
@@ -75,16 +78,16 @@ describe("routing", () => {
 
   test("starts a newly opened category at page 1", async () => {
     renderAt("/");
-    await screen.findByAltText("nature_1");
+    await screen.findByAltText("Nature photo 1");
 
     await userEvent.click(screen.getByRole("button", { name: "Next" }));
-    await screen.findByAltText("nature_10");
+    await screen.findByAltText("Nature photo 10");
     expect(screen.getByTestId("page-indicator")).toHaveTextContent("Page 2");
 
     await userEvent.click(screen.getByRole("link", { name: "Fashion" }));
 
     expect(screen.getByTestId("page-indicator")).toHaveTextContent("Page 1");
-    expect(await screen.findByAltText("fashion_1")).toBeInTheDocument();
+    expect(await screen.findByAltText("Fashion photo 1")).toBeInTheDocument();
   });
 });
 

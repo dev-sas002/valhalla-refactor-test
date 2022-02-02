@@ -44,6 +44,18 @@ body {
   outline-offset: 3px;
 }
 
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 /* ---------------------------------------------------------------- nav bar */
 
 .navbar {
@@ -92,6 +104,23 @@ body {
   font-weight: 600;
 }
 
+/* Brand plus three links overflow a 390 px phone at desktop spacing. */
+@media (max-width: 560px) {
+  .navbar {
+    gap: 12px;
+    padding: 0 16px;
+  }
+
+  .navbar__brand {
+    font-size: 14px;
+  }
+
+  .navbar__link {
+    padding: 6px 10px;
+    font-size: 13px;
+  }
+}
+
 /* ------------------------------------------------------------------- page */
 
 .page {
@@ -115,6 +144,16 @@ body {
   font-size: 26px;
   font-weight: 650;
   letter-spacing: -0.01em;
+}
+
+.page__lead {
+  margin: 12px 0 0;
+  color: var(--ink-muted);
+}
+
+.page__lead a {
+  color: var(--accent);
+  font-weight: 600;
 }
 
 .page__status {
@@ -203,6 +242,15 @@ body {
 .card:focus-within .card__overlay {
   opacity: 1;
   transform: translateY(0);
+}
+
+/* Touch screens have no hover, so the download button would be unreachable
+   behind an invisible overlay. Show it permanently there. */
+@media (hover: none) {
+  .card__overlay {
+    opacity: 1;
+    transform: none;
+  }
 }
 
 .card__name {

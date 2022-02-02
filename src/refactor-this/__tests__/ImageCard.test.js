@@ -2,7 +2,10 @@ import React from "react";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
-import ImageCard, { downloadFileName } from "../components/ImageCard";
+import ImageCard, {
+  describePhoto,
+  downloadFileName,
+} from "../components/ImageCard";
 
 describe("downloadFileName", () => {
   test("appends the extension taken from the url", () => {
@@ -17,6 +20,17 @@ describe("downloadFileName", () => {
 
   test("falls back to the bare name when no extension can be found", () => {
     expect(downloadFileName("a", "http://host/images/a")).toBe("a");
+  });
+});
+
+describe("describePhoto", () => {
+  test("turns a category_number name into readable text", () => {
+    expect(describePhoto("nature_12")).toBe("Nature photo 12");
+    expect(describePhoto("architecture_3")).toBe("Architecture photo 3");
+  });
+
+  test("leaves any other name untouched", () => {
+    expect(describePhoto("sunset over the bay")).toBe("sunset over the bay");
   });
 });
 
@@ -41,10 +55,10 @@ describe("ImageCard", () => {
     delete global.fetch;
   });
 
-  test("renders the image lazily with the name as alt text", () => {
+  test("renders the image lazily with readable alt text", () => {
     render(<ImageCard name="nature_1" url={url} />);
 
-    const image = screen.getByAltText("nature_1");
+    const image = screen.getByAltText("Nature photo 1");
     expect(image).toHaveAttribute("src", url);
     expect(image).toHaveAttribute("loading", "lazy");
     // Intrinsic size keeps the tile from reflowing once the photo arrives.
@@ -55,9 +69,11 @@ describe("ImageCard", () => {
   test("names the photo and offers a real button, not a link", () => {
     render(<ImageCard name="nature_1" url={url} />);
 
-    expect(screen.getByText("nature_1")).toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: "Download" })
+      screen.getByText("nature_1", { selector: ".card__name" })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Download nature_1" })
     ).toBeInTheDocument();
     expect(screen.queryByRole("link")).not.toBeInTheDocument();
   });
@@ -68,7 +84,9 @@ describe("ImageCard", () => {
 
     render(<ImageCard name="nature_1" url={url} />);
 
-    await userEvent.click(screen.getByRole("button", { name: "Download" }));
+    await userEvent.click(
+      screen.getByRole("button", { name: "Download nature_1" })
+    );
 
     await waitFor(() => {
       expect(global.URL.createObjectURL).toHaveBeenCalledWith(blob);
@@ -96,7 +114,9 @@ describe("ImageCard", () => {
 
     render(<ImageCard name="nature_1" url={url} />);
 
-    await userEvent.click(screen.getByRole("button", { name: "Download" }));
+    await userEvent.click(
+      screen.getByRole("button", { name: "Download nature_1" })
+    );
 
     await waitFor(() => {
       expect(window.open).toHaveBeenCalledWith(url, "_blank", "noopener");
@@ -109,7 +129,9 @@ describe("ImageCard", () => {
 
     render(<ImageCard name="nature_1" url={url} />);
 
-    await userEvent.click(screen.getByRole("button", { name: "Download" }));
+    await userEvent.click(
+      screen.getByRole("button", { name: "Download nature_1" })
+    );
 
     await waitFor(() => {
       expect(window.open).toHaveBeenCalled();
@@ -117,7 +139,9 @@ describe("ImageCard", () => {
 
     // The button returns to its idle label so it stays clickable.
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: "Download" })).toBeEnabled();
+      expect(
+        screen.getByRole("button", { name: "Download nature_1" })
+      ).toBeEnabled();
     });
   });
 });

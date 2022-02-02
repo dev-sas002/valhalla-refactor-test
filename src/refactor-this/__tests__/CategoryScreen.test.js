@@ -51,8 +51,8 @@ describe("CategoryScreen", () => {
 
     await waitForPhotos(9);
     expect(screen.queryByTestId("gallery-skeleton")).not.toBeInTheDocument();
-    expect(screen.getByAltText("nature_1")).toBeInTheDocument();
-    expect(screen.getByAltText("nature_9")).toBeInTheDocument();
+    expect(screen.getByAltText("Nature photo 1")).toBeInTheDocument();
+    expect(screen.getByAltText("Nature photo 9")).toBeInTheDocument();
   });
 
   test("keeps the skeleton up until every slice of the page has answered", async () => {
@@ -93,7 +93,7 @@ describe("CategoryScreen", () => {
     await userEvent.click(nextButton());
 
     expect(screen.queryByTestId("gallery-skeleton")).not.toBeInTheDocument();
-    expect(screen.getByAltText("nature_10")).toBeInTheDocument();
+    expect(screen.getByAltText("Nature photo 10")).toBeInTheDocument();
     expect(screen.getByTestId("page-indicator")).toHaveTextContent("Page 2");
 
     // 6 for pages 1 and 2, plus the prefetch of page 3. Page 2 itself was
@@ -111,13 +111,13 @@ describe("CategoryScreen", () => {
 
     await userEvent.click(nextButton());
     await waitFor(() =>
-      expect(screen.getByAltText("nature_10")).toBeInTheDocument()
+      expect(screen.getByAltText("Nature photo 10")).toBeInTheDocument()
     );
     const callsOnPageTwo = source.calls.length;
 
     await userEvent.click(previousButton());
 
-    expect(screen.getByAltText("nature_1")).toBeInTheDocument();
+    expect(screen.getByAltText("Nature photo 1")).toBeInTheDocument();
     expect(screen.queryByTestId("gallery-skeleton")).not.toBeInTheDocument();
     expect(source.calls).toHaveLength(callsOnPageTwo);
   });
