@@ -22,7 +22,7 @@ COPY src ./src
 RUN npm run build
 
 # ------------------------------------------------------- runtime: static web
-FROM nginx:1.27-alpine AS web
+FROM nginx:1.30-alpine AS web
 COPY docker/nginx.conf /etc/nginx/nginx.conf
 COPY --from=build /app/dist /usr/share/nginx/html
 # nginx:alpine ships an unprivileged `nginx` user; give it the paths it writes.
