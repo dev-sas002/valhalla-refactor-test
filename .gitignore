@@ -1,0 +1,32 @@
+# dependencies
+node_modules/
+
+# build output
+build/
+dist/
+
+# test coverage
+coverage/
+
+# local Python virtualenv (not part of the app)
+project_venv/
+
+# environment
+.env
+.env.*
+!.env.example
+
+# logs, caches, scratch
+*.log
+npm-debug.log*
+.cache/
+.eslintcache
+tmp/
+
+# editors and OS
+.idea/
+.vscode/
+*.swp
+desktop.ini
+.DS_Store
+**/.DS_Store

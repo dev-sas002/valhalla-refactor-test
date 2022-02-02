@@ -1,0 +1,12 @@
+.git
+.gitignore
+node_modules
+dist
+build
+coverage
+docs
+project_venv
+*.log
+.idea
+.DS_Store
+**/.DS_Store

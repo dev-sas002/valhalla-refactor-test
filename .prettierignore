@@ -1,0 +1,9 @@
+node_modules
+coverage
+dist
+build
+package-lock.json
+src/refactor-this/bundle.js
+# off limits per the brief
+src/do-not-refactor
+project_venv
