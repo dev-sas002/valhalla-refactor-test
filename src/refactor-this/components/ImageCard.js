@@ -52,7 +52,6 @@ const ImageCard = ({ name, url }) => {
       link.click();
       link.remove();
     } catch (error) {
-      // eslint-disable-next-line no-console
       console.error(`Failed downloading ${name}:`, error);
       // Fall back to opening the image so the user can still save it.
       window.open(url, "_blank", "noopener");

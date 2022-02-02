@@ -14,7 +14,6 @@ describe("BASE_URL", () => {
     delete process.env.API_BASE_URL;
     jest.resetModules();
 
-    // eslint-disable-next-line global-require
     const { BASE_URL, DEFAULT_BASE_URL } = require("../constants/url");
     expect(BASE_URL).toBe(DEFAULT_BASE_URL);
     expect(DEFAULT_BASE_URL).toBe("http://localhost:8888");
@@ -24,7 +23,6 @@ describe("BASE_URL", () => {
     process.env.API_BASE_URL = "https://images.example.com";
     jest.resetModules();
 
-    // eslint-disable-next-line global-require
     const { BASE_URL } = require("../constants/url");
     expect(BASE_URL).toBe("https://images.example.com");
   });
@@ -32,9 +30,7 @@ describe("BASE_URL", () => {
   test("is used as the base URL of the default http client", () => {
     jest.resetModules();
 
-    // eslint-disable-next-line global-require
     const { BASE_URL } = require("../constants/url");
-    // eslint-disable-next-line global-require
     const httpClient = require("../data/httpClient").default;
 
     expect(httpClient.baseUrl).toBe(BASE_URL);

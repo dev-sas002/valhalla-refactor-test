@@ -18,7 +18,6 @@ class ErrorBoundary extends React.Component {
   }
 
   componentDidCatch(error) {
-    // eslint-disable-next-line no-console
     console.error("Unhandled error in the photo gallery:", error);
   }
 
