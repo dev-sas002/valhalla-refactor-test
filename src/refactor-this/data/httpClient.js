@@ -10,6 +10,22 @@ export class HttpError extends Error {
   }
 }
 
+/** Thrown when a request outlives its deadline. */
+export class TimeoutError extends Error {
+  constructor(url, timeoutMs) {
+    super(`GET ${url} timed out after ${timeoutMs} ms`);
+    this.name = "TimeoutError";
+    this.url = url;
+  }
+}
+
+/**
+ * The legacy API sleeps 3 seconds by design, so a response five times later
+ * than that is a hung connection, not a slow one. Without a deadline the
+ * skeleton would stay up forever and the retry button would never appear.
+ */
+export const DEFAULT_TIMEOUT_MS = 15000;
+
 /**
  * Minimal JSON-over-HTTP client.
  *
@@ -22,22 +38,49 @@ export class HttpError extends Error {
  * @param {Object}   [options]
  * @param {String}   [options.baseUrl]   prefixed to every path
  * @param {Function} [options.fetchImpl] injected for tests
+ * @param {Number}   [options.timeoutMs] per-request deadline
  */
-export const createHttpClient = ({ baseUrl = BASE_URL, fetchImpl } = {}) => {
+export const createHttpClient = ({
+  baseUrl = BASE_URL,
+  fetchImpl,
+  timeoutMs = DEFAULT_TIMEOUT_MS,
+} = {}) => {
   const getJson = async (path, { signal } = {}) => {
     const doFetch = fetchImpl || globalThis.fetch;
     const url = `${baseUrl}${path}`;
 
-    const response = await doFetch(url, {
-      signal,
-      headers: { Accept: "application/json" },
-    });
+    // One controller carries both reasons to stop: the caller's signal (the
+    // user left the category) and our own deadline. They are told apart
+    // afterwards, because only the deadline is an error worth showing.
+    const controller = new AbortController();
+    let timedOut = false;
+    const timer = setTimeout(() => {
+      timedOut = true;
+      controller.abort();
+    }, timeoutMs);
+    const forwardAbort = () => controller.abort();
 
-    if (!response.ok) {
-      throw new HttpError(response.status, response.statusText, url);
+    if (signal && signal.aborted) controller.abort();
+    else if (signal) signal.addEventListener("abort", forwardAbort);
+
+    try {
+      const response = await doFetch(url, {
+        signal: controller.signal,
+        headers: { Accept: "application/json" },
+      });
+
+      if (!response.ok) {
+        throw new HttpError(response.status, response.statusText, url);
+      }
+
+      return await response.json();
+    } catch (error) {
+      if (timedOut) throw new TimeoutError(url, timeoutMs);
+      throw error;
+    } finally {
+      clearTimeout(timer);
+      if (signal) signal.removeEventListener("abort", forwardAbort);
     }
-
-    return response.json();
   };
 
   return { baseUrl, getJson };
