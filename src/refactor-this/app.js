@@ -1,5 +1,5 @@
 import React from "react";
-import ReactDOM from "react-dom";
+import { createRoot } from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 
 import "./css/styles.css";
@@ -26,4 +26,4 @@ const App = () => (
   </ErrorBoundary>
 );
 
-ReactDOM.render(<App />, document.getElementById("main-view"));
+createRoot(document.getElementById("main-view")).render(<App />);

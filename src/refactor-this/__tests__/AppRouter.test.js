@@ -92,8 +92,11 @@ describe("routing", () => {
 });
 
 describe("NavBar", () => {
-  test("links to every category", () => {
+  // Each test waits for the first photo so the page load settles inside the
+  // test rather than updating state after it has finished.
+  test("links to every category", async () => {
     renderAt("/");
+    await screen.findByAltText("Nature photo 1");
 
     expect(screen.getByRole("link", { name: "Nature" })).toHaveAttribute(
       "href",
@@ -109,8 +112,9 @@ describe("NavBar", () => {
     );
   });
 
-  test("marks only the current route as active", () => {
+  test("marks only the current route as active", async () => {
     renderAt("/architecture");
+    await screen.findByAltText("Architecture photo 1");
 
     expect(screen.getByRole("link", { name: "Architecture" })).toHaveClass(
       "active"
