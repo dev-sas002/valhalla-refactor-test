@@ -72,9 +72,13 @@ const time = async (fn) => {
     await waitForFullGrid(page, p1);
   });
 
-  // 5. a realistic dwell: the user looks at the page for 3.5s, then pages on
+  // 5. a realistic dwell: the user looks at the page for 3.5s, then pages on.
+  // Every wait excludes the grid already on screen: the router renders a
+  // navigation as a transition, so the old grid can still be up for a frame
+  // after the click and would otherwise count as the new one.
+  const n2 = await srcs(page);
   await page.getByRole("link", { name: "Fashion" }).click();
-  await waitForFullGrid(page);
+  await waitForFullGrid(page, n2);
   const f1 = await srcs(page);
   await page.waitForTimeout(3500);
   results.nextAfter3500msDwell = await time(async () => {
@@ -83,9 +87,10 @@ const time = async (fn) => {
   });
 
   // 6. switch category (cold)
+  const f2 = await srcs(page);
   results.switchCategoryCold = await time(async () => {
     await page.getByRole("link", { name: "Architecture" }).click();
-    await waitForFullGrid(page);
+    await waitForFullGrid(page, f2);
   });
 
   console.log(JSON.stringify({ label: LABEL, base: BASE, results }, null, 2));
