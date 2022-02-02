@@ -46,6 +46,16 @@ module.exports = (_env, argv = {}) => {
       splitChunks: { chunks: "all" },
     },
 
+    // React 19 and the router alone are ~253 KiB minified (~88 KB gzipped),
+    // just over webpack's generic 244 KiB hint. An explicit budget a little
+    // above today's bundle still flags real growth without warning on every
+    // build about the framework itself.
+    performance: {
+      hints: isProduction ? "warning" : false,
+      maxAssetSize: 280 * 1024,
+      maxEntrypointSize: 300 * 1024,
+    },
+
     plugins: [
       new HtmlWebpackPlugin({
         template: path.join(SOURCE, "index.html"),
