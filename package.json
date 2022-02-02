@@ -1,7 +1,7 @@
 {
-  "name": "technical-test",
+  "name": "photo-sharing-app",
   "version": "1.0.0",
-  "description": "Valhalla Technical Test - photo browsing SPA over a deliberately slow legacy API",
+  "description": "Photo gallery SPA that pages nine photos at a time over a slow three-per-request legacy API",
   "main": "src/refactor-this/app.js",
   "private": true,
   "scripts": {
@@ -17,19 +17,14 @@
     "format": "prettier --write \"**/*.{js,json,css,html,md}\"",
     "format:check": "prettier --check \"**/*.{js,json,css,html,md}\""
   },
-  "repository": {
-    "type": "git",
-    "url": "git+ssh://git@gitlab.com/Blvnp_Developers/technical-test.git"
-  },
   "keywords": [
-    "technical",
-    "test"
+    "react",
+    "photo-gallery",
+    "pagination",
+    "prefetch",
+    "express"
   ],
-  "license": "ISC",
-  "bugs": {
-    "url": "https://gitlab.com/Blvnp_Developers/technical-test/issues"
-  },
-  "homepage": "https://gitlab.com/Blvnp_Developers/technical-test#readme",
+  "license": "MIT",
   "engines": {
     "node": ">=22.15.0"
   },
