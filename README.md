@@ -2,8 +2,8 @@
 
 A React single-page app that browses 66 photos in three categories — nine to a
 page in a 3 x 3 grid, with next/previous navigation and a download button on
-every photo. It is a Valhalla technical test, and the brief is a _refactoring_
-brief: improve the app without changing what it does for the user.
+every photo. It began as a _refactoring_ brief: improve the app without
+changing what it does for the user.
 
 What makes it interesting is the API it has to live with. `src/do-not-refactor/`
 is an Express service the brief forbids touching, and it returns **at most 3
@@ -16,7 +16,16 @@ below is about that gap.
 
 The constraint is right there in the off-limits code: `const LIMIT = 3` in
 `image-db.js`, and a `setTimeout(..., 3000)` wrapped around every response in
-`server.js`. Done naively — three requests one after another — a page costs 9
+`server.js`. This is the last slice of `architecture`, three seconds after
+asking for it:
+
+```
+curl "http://localhost:8391/images?category=architecture&page=8"
+[{"category":"architecture","name":"architecture_22","url":"http://localhost:8391/static/images/architecture/architecture_22.jpeg"},
+ {"category":"architecture","name":"architecture_23","url":"http://localhost:8391/static/images/architecture/architecture_23.jpeg"}]
+```
+
+Done naively — three requests one after another — a page costs 9
 seconds, and paging back to one you have already seen costs 9 more. Everything
 that fixes it lives in `data/galleryService.js`:
 
@@ -69,17 +78,18 @@ fire a single request.
 
 ## What that is worth
 
-Wall-clock, click to a full grid of nine decoded photos, median of three runs
-through a real browser. The script is committed as `docs/measure.js`.
+Wall-clock, click to a full grid of nine photos, median of three runs through
+headless Chromium against the production build. The script is committed as
+`docs/measure.js`.
 
 | Action                                    |  Before |     After |
 | ----------------------------------------- | ------: | --------: |
-| Cold load of page 1                       | 3268 ms |   3147 ms |
-| `Next` clicked the instant page 1 appears | 3056 ms |   3003 ms |
-| `Next` after 3.5 s of looking at the page | 3043 ms | **39 ms** |
-| `Previous`, back to page 1                | 3045 ms | **33 ms** |
-| `Next` again, to a page already visited   | 3050 ms | **33 ms** |
-| Switching category, cold                  | 3049 ms |   3050 ms |
+| Cold load of page 1                       | 3268 ms |   3070 ms |
+| `Next` clicked the instant page 1 appears | 3056 ms |   3007 ms |
+| `Next` after 3.5 s of looking at the page | 3043 ms | **18 ms** |
+| `Previous`, back to page 1                | 3045 ms | **41 ms** |
+| `Next` again, to a page already visited   | 3050 ms | **49 ms** |
+| Switching category, cold                  | 3049 ms |   3058 ms |
 
 **The first view of any page still costs one 3-second round trip, and nothing on
 the client can change that.** Rows 1 and 6 are the proof, and row 2 is the
@@ -88,25 +98,33 @@ prefetch has only just started, so you wait anyway — de-duplicated with the
 click, so never _slower_. What moved is every later visit to a page. The
 "before" column was measured during the refactor against the pre-refactor code,
 which is not in this repository's history — a recorded measurement, not one you
-can re-derive here.
+can re-derive here. The "after" column you can: start the stack and run
+`node docs/measure.js http://localhost:8390`.
 
 ### Bytes shipped
 
-|                                         |       Bytes |    Gzipped |
-| --------------------------------------- | ----------: | ---------: |
-| Before, as committed                    |     171 706 |     54 668 |
-| Before, patched so it actually rendered |     178 218 |     56 743 |
-| After                                   | **159 738** | **51 741** |
+|                                         |   Bytes | Gzipped |
+| --------------------------------------- | ------: | ------: |
+| Before, as committed                    | 171 706 |  54 668 |
+| Before, patched so it actually rendered | 178 218 |  56 743 |
+| After the refactor, on React 16         | 159 738 |  51 741 |
+| Now, on React 19 and React Router 7     | 277 782 |  88 664 |
 
-The "after" row you _can_ re-derive: `npm run build`, then
-`cat dist/*.js | wc -c` and `cat dist/*.js | gzip | wc -c`. Against the
-functional baseline that is **−18 480 B raw (−10.4 %)**, **−5 002 B gzipped
-(−8.8 %)**, from three removals: **axios** → `fetch`, which also brings the
+The refactor itself cut **5 002 B gzipped (−8.8 %)** from the functional
+baseline, through three removals: **axios** → `fetch`, which also brings the
 native `AbortSignal` the cancellation needs; **react-loader-spinner** → a CSS
 skeleton grid, the better loading state anyway; and **Bootstrap 4 from a CDN** →
-355 lines of local CSS. Content hashes and a vendor chunk cost a measured
-~1.2 KB of scope hoisting, and source maps ~10 KB of shipped JS, so they are off
-in production.
+local CSS. The last row then gives that back and more: React 16 is long out of
+support, and every React Router 6 release carries an open-redirect advisory
+(GHSA-wrjc-x8rr-h8h6) whose fix needs Router 7, which needs React 18 or later.
+About 37 KB gzipped is the price of running supported, patched libraries; I
+think it is the right trade for a gallery whose every page costs three seconds
+of network anyway.
+
+Re-derive the last row with `npm run build`, then `cat dist/*.js | wc -c` and
+`cat dist/*.js | gzip | wc -c`. Content hashes and a vendor chunk cost a
+measured ~1.2 KB of scope hoisting, and source maps ~10 KB of shipped JS, so
+they are off in production.
 
 ## While the user waits
 
@@ -116,16 +134,33 @@ panel with a working retry — and a `role="status"` region announces which one 
 on screen ("Showing 9 Nature photos on page 1"). Photos carry intrinsic
 dimensions and `loading="lazy"` so tiles do not reflow as they arrive, the
 shimmer has a `prefers-reduced-motion` branch, and the grid falls back to two
-columns and then one.
+columns and then one. A request that has not answered after 15 seconds is
+abandoned with a `TimeoutError`, so a hung connection ends on the error panel
+instead of an endless skeleton.
 
 ![The error panel, with a Try again button](docs/screenshots/04-error-state.png)
 
+Each photo's alt text is readable ("Architecture photo 1" rather than the file
+name), and each Download button tells a screen reader which photo it saves. On
+touch screens, which have no hover, the download overlay stays visible, and on
+a phone the nav links wrap under the brand:
+
+<img src="docs/screenshots/05-mobile.png" alt="The architecture category at 390 by 844 pixels: one photo per row with its Download button visible" width="300">
+
 ## Running it
 
+The quickest path needs only Docker:
+
 ```
-npm install
+docker compose up --build     # nginx + the built bundle on :8390, API on :8391
+```
+
+then open http://localhost:8390. For development, with Node 22.15 or later (the
+version is in `.nvmrc`):
+
+```
+npm ci
 npm start                     # API on :8888, dev server on :3000, via concurrently
-docker compose up --build     # or nginx + a built bundle on :8390, API on :8391
 ```
 
 | Variable       | Default                 | Notes                                                                                     |
@@ -139,13 +174,13 @@ Because the image store builds absolute photo URLs out of its own port number,
 that port must be identical on both sides of any mapping — hence `8391:8391` for
 the API in compose, while the web container is mapped `8390:8080`.
 
-**Docker status, stated plainly: the images have never been built.** The
-refactor log records `Build verified: NOT RUN — deferred, RAM constraint` and
-`Boot verified: NOT RUN — deferred, RAM constraint`, and the only Docker command
-run was `docker compose config -q`, which parses cleanly. What _was_ verified is
-the production artefact outside Docker: built with
-`API_BASE_URL=http://localhost:8391 npx webpack --mode production`, served by
-`python3 -m http.server` and loaded in Chromium — nine photos, no page errors.
+The compose stack builds two images from one `Dockerfile`: `api` (the legacy
+Express service, production dependencies only, run as the `node` user) and
+`web` (nginx running unprivileged, serving the bundle with an SPA fallback,
+gzip, `immutable` caching for content-hashed chunks and `no-cache` for
+`index.html`). Both have health checks, and `web` waits for `api` to be
+healthy. Built from a clean checkout, both report healthy and the page renders
+nine photos.
 
 ## Where the code lives
 
@@ -161,10 +196,10 @@ src/refactor-this/
   data/imageSource.js        the contract: sliceSize + fetchSlice(category, slice, {signal})
   data/legacyImageSource.js  adapter over the 3-per-call API
   data/galleryService.js     batch, cache, de-dupe, abort, prefetch - no React import
-  data/httpClient.js         fetch + AbortSignal, 46 lines
+  data/httpClient.js         fetch + AbortSignal + a 15 s deadline
   hooks/useGalleryPage.js    the only place React meets the data layer
   screens/CategoryScreen.js  four states, no data logic
-  __tests__/                 74 tests, including an in-memory ImageSource
+  __tests__/                 79 tests, including an in-memory ImageSource
 src/do-not-refactor/         the crippled Express API - off limits per the brief
 docker/nginx.conf            SPA fallback, gzip, immutable caching for hashed chunks
 ```
@@ -184,11 +219,10 @@ request per page instead of three, and a test asserts that; and every UI test
 drives the real components through a second implementation
 (`__tests__/helpers/imageSources.js`) rather than `jest.mock`-ing a module.
 
-## Three things a green test suite could not see
+## Four things a green test suite could not see
 
-**The bundle did not run in a browser.** The refactor log records the committed
-bundle throwing `regeneratorRuntime is not defined` on every `ImageCard` and
-rendering nothing: `@babel/preset-env` had no `targets`, so it transpiled
+**The bundle did not run in a browser.** The original bundle threw
+`regeneratorRuntime is not defined` on every `ImageCard` and rendered nothing: `@babel/preset-env` had no `targets`, so it transpiled
 `async`/`await` to regenerator, while `regenerator-runtime` was loaded in
 `jest.setup.js` — so the suite passed over a blank app. The mechanism is still
 checkable: transform `components/ImageCard.js` with `@babel/preset-env` and no
@@ -212,11 +246,19 @@ the other half — a partially filled tail:
 
 ![Architecture page 3 holds 5 photos and Next is disabled](docs/screenshots/03-last-page.png)
 
+**The web container never started.** `docker/nginx.conf` matched hashed bundles
+with an unquoted `\.[0-9a-f]{8}\.js$`, and nginx reads `{` as the start of a
+block, so it stopped with `unknown directive "8}\.js$"` and compose restarted it
+forever. The regex is quoted now. Nothing but actually booting the image could
+have caught it.
+
 ## Tests
 
 ```
-npm test                 # 74 tests, 10 suites
-npm run test:coverage    # 98.5 % statements, 89.56 % branches, 100 % functions
+npm test                 # 79 tests, 10 suites
+npm run test:coverage    # 98.68 % statements, 90.62 % branches, 100 % functions
+npm run lint             # ESLint, unused disable comments included
+npm run format:check     # Prettier
 ```
 
 Keeping `galleryService` framework-free means the hard logic is tested directly
@@ -234,10 +276,11 @@ because the image store bakes its own port into every photo URL, without an
 override the stack can only ever run on 8888. Reverting costs only the ability
 to relocate the port.
 
-**No new features, deliberately**, and **React 16 and `ReactDOM.render` are
-kept**. The brief is to refactor without changing the four required behaviours;
-upgrading React would also change the double-invoke semantics of the effects in
-`useGalleryPage`, which deserves its own piece of work.
+**No new features, deliberately.** The brief is to refactor without changing
+the four required behaviours. The move to React 19 and `createRoot` changes
+none of them: the app does not use `StrictMode`, so the effects in
+`useGalleryPage` are not double-invoked, and the whole suite and the timings
+above were re-run on it.
 
 ## Known gaps
 
@@ -247,7 +290,15 @@ upgrading React would also change the double-invoke semantics of the effects in
 - Categories are hard-coded in `constants/general.js` (the API has no endpoint
   that lists them), and `API_BASE_URL` is baked in at build time, so one image
   cannot be re-pointed at a different API without rebuilding.
-- No end-to-end suite runs in CI: `docs/measure.js` and `docs/screenshots.js`
-  need Playwright installed separately and are run by hand.
-- `npm audit` flags vulnerabilities in the transitive dev tree (webpack 5.68
-  era); fixing them means major bumps the brief argues against.
+- `docs/measure.js` and `docs/screenshots.js` drive a real browser but need
+  Playwright installed separately (`npm i -D playwright`) and are run by hand.
+- `npm audit` reports no critical or high findings. The remaining moderate and
+  low ones (glob, minimatch, deepmerge) sit inside Jest 30's own dependency
+  tree, run only under test, and have no fixed Jest release yet.
+- ESLint is still on 8, which is out of support. ESLint 9 is out of support
+  too, and `eslint-plugin-react` and `eslint-plugin-jsx-a11y` do not yet declare
+  support for 10.
+
+## License
+
+MIT — see [LICENSE](LICENSE).

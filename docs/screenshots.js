@@ -1,12 +1,13 @@
 /**
- * Captures the screenshots in docs/screenshots/ at 1440x900.
+ * Captures the screenshots in docs/screenshots/: four at 1440x900 and one
+ * at 390x844, the size of a current phone.
  *
  *   npm run start:api & npm run start:web
  *   node docs/screenshots.js
  *
  * Playwright is not a dependency of this project; see docs/measure.js for how
  * to install it. The PNGs committed here were additionally palette-quantised
- * to keep each one under 400 KB.
+ * with pngquant to keep each one under 500 KB.
  */
 const { chromium } = require("playwright");
 
@@ -74,6 +75,20 @@ const imagesDecoded = (page) =>
     .waitFor({ timeout: 30000 });
   await offline.waitForTimeout(400);
   await offline.screenshot({ path: `${OUT}/04-error-state.png` });
+
+  // 5 - the single-column layout on a phone
+  const phone = await browser.newContext({
+    viewport: { width: 390, height: 844 },
+    deviceScaleFactor: 1,
+    hasTouch: true,
+    isMobile: true,
+  });
+  const mobile = await phone.newPage();
+  await mobile.goto(BASE + "/architecture");
+  await fullGrid(mobile);
+  await imagesDecoded(mobile);
+  await mobile.waitForTimeout(400);
+  await mobile.screenshot({ path: `${OUT}/05-mobile.png` });
 
   await browser.close();
 })().catch((e) => {
