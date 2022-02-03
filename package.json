@@ -1,0 +1,71 @@
+{
+  "name": "technical-test",
+  "version": "1.0.0",
+  "description": "Valhalla Technical Test - photo browsing SPA over a deliberately slow legacy API",
+  "main": "src/refactor-this/app.js",
+  "private": true,
+  "scripts": {
+    "start": "concurrently -n api,web -c cyan,magenta \"npm:start:api\" \"npm:start:web\"",
+    "start:api": "node src/do-not-refactor/server.js",
+    "start:web": "webpack serve --mode development",
+    "build": "webpack --mode production",
+    "test": "jest --runInBand",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --runInBand --coverage",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write \"**/*.{js,json,css,html,md}\"",
+    "format:check": "prettier --check \"**/*.{js,json,css,html,md}\""
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@gitlab.com/Blvnp_Developers/technical-test.git"
+  },
+  "keywords": [
+    "technical",
+    "test"
+  ],
+  "author": "AJ Catarina",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://gitlab.com/Blvnp_Developers/technical-test/issues"
+  },
+  "homepage": "https://gitlab.com/Blvnp_Developers/technical-test#readme",
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.17.1",
+    "react": "^16.12.0",
+    "react-dom": "^16.12.0",
+    "react-router-dom": "^6.2.1"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.7.4",
+    "@babel/preset-env": "^7.7.4",
+    "@babel/preset-react": "^7.7.4",
+    "@testing-library/jest-dom": "^5.16.5",
+    "@testing-library/react": "^11.2.7",
+    "@testing-library/user-event": "^13.5.0",
+    "babel-jest": "^30.3.0",
+    "babel-loader": "^8.0.6",
+    "concurrently": "^8.2.2",
+    "css-loader": "^6.6.0",
+    "eslint": "^8.57.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-jest": "^27.9.0",
+    "eslint-plugin-jsx-a11y": "^6.8.0",
+    "eslint-plugin-react": "^7.34.0",
+    "eslint-plugin-react-hooks": "^4.6.0",
+    "html-webpack-plugin": "^5.6.8",
+    "identity-obj-proxy": "^3.0.0",
+    "jest": "^30.3.0",
+    "jest-environment-jsdom": "^30.3.0",
+    "prettier": "^3.2.5",
+    "style-loader": "^3.3.1",
+    "webpack": "^5.68.0",
+    "webpack-cli": "^4.9.2",
+    "webpack-dev-server": "^4.7.4"
+  }
+}
