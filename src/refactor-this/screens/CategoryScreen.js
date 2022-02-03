@@ -16,23 +16,51 @@ const CategoryScreen = (props) => {
   const [imagesPage3, setImagesPage3] = useState([]);
 
   useEffect(() => {
+    let cancelled = false;
+
     setLoading(true);
 
-    getImages(category, page * 3 - 2).then((response) => {
-      setImagesPage1(response.data);
-      setLoading(false);
-    });
+    const page1 = page * 3 - 2;
+    const page2 = page * 3 - 1;
+    const page3 = page * 3;
 
-    getImages(category, page * 3 - 1).then((response) => {
-      setImagesPage2(response.data);
-      setLoading(false);
-    });
+    Promise.all([
+      getImages(category, page1),
+      getImages(category, page2),
+      getImages(category, page3),
+    ])
+      .then(([response1, response2, response3]) => {
+        if (cancelled) return;
 
-    getImages(category, page * 3).then((response) => {
-      setImagesPage3(response.data);
-      setEnd(response.data.length === 0);
-      setLoading(false);
-    });
+        const data1 = response1?.data ?? [];
+        const data2 = response2?.data ?? [];
+        const data3 = response3?.data ?? [];
+
+        setImagesPage1(data1);
+        setImagesPage2(data2);
+        setImagesPage3(data3);
+        setEnd(data3.length === 0);
+      })
+      .catch((error) => {
+        if (cancelled) return;
+
+        // Keep the UI consistent: stop loading and clear current results.
+        // We set `end=true` so the user can't keep paging forward without data.
+        // eslint-disable-next-line no-console
+        console.error("Failed loading images:", error);
+        setImagesPage1([]);
+        setImagesPage2([]);
+        setImagesPage3([]);
+        setEnd(true);
+      })
+      .finally(() => {
+        if (cancelled) return;
+        setLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, [category, page]);
 
   return (
@@ -60,8 +88,8 @@ const CategoryScreen = (props) => {
       </div>
 
       <Paginator
-        prev={() => setPage(page - 1)}
-        next={() => setPage(page + 1)}
+        prev={() => setPage((prevPage) => prevPage - 1)}
+        next={() => setPage((prevPage) => prevPage + 1)}
         page={page}
         end={end}
       />
