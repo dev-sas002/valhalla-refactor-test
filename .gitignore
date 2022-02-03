@@ -1,0 +1,7 @@
+node_modules
+build
+dist
+.idea
+desktop.ini
+**/.DS_Store
+*.swp
