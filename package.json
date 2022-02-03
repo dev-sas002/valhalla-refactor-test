@@ -5,7 +5,7 @@
   "main": "src/refactor-this/index.js",
   "scripts": {
     "start": "nodemon src/do-not-refactor/server.js | webpack-dev-server --mode development",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "jest --runInBand"
   },
   "repository": {
     "type": "git",
@@ -39,5 +39,14 @@
     "webpack": "^5.68.0",
     "webpack-cli": "^4.9.2",
     "webpack-dev-server": "^4.7.4"
+  },
+  "devDependencies": {
+    "@testing-library/jest-dom": "^5.16.5",
+    "@testing-library/react": "^11.2.7",
+    "@testing-library/user-event": "^13.5.0",
+    "babel-jest": "^30.3.0",
+    "identity-obj-proxy": "^3.0.0",
+    "jest": "^30.3.0",
+    "jest-environment-jsdom": "^30.3.0"
   }
 }
