@@ -1,0 +1,55 @@
+# One command brings up the whole stack:
+#   docker compose up --build
+# then open http://localhost:8390
+#
+# The API port is fixed at 8391 on both sides on purpose: the legacy image
+# store builds absolute photo URLs from its own port, so the browser has to be
+# able to reach it on exactly that number.
+
+services:
+  api:
+    build:
+      context: .
+      target: api
+    image: valhalla-photos-api
+    container_name: valhalla-photos-api
+    environment:
+      API_PORT: "8391"
+    ports:
+      - "8391:8391"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "-q",
+          "-O",
+          "/dev/null",
+          "http://127.0.0.1:8391/static/images/nature/nature_1.jpeg",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+    restart: unless-stopped
+
+  web:
+    build:
+      context: .
+      target: web
+      args:
+        API_BASE_URL: "http://localhost:8391"
+    image: valhalla-photos-web
+    container_name: valhalla-photos-web
+    ports:
+      - "8390:8080"
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8080/"]
+      interval: 15s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+    restart: unless-stopped
